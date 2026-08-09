@@ -37,8 +37,17 @@ packages/test-kit/         shared fixtures
 - Lefthook runs repository gates; never bypass it.
 - Changesets owns versions/changelog once packages become publishable.
 
-Commands will be materialized in the baseline slice. Until then, this repository
-contains only the durable product contract.
+## Commands
+
+- Install locked tools: `mise install --locked`
+- Install dependencies: automatic before mise tasks, or `bun install --frozen-lockfile`
+- Full gate: `mise run verify`
+- Build: `mise run build`
+- Test: `mise run test`
+- Typecheck: `mise run typecheck`
+- Lint: `mise run lint`
+- Format: `mise run format`
+- Install hooks: `mise run hooks:install`
 
 ## Review pressure points
 

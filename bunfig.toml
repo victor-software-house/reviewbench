@@ -1,0 +1,14 @@
+[install]
+linker = "isolated"
+minimumReleaseAge = 259200
+minimumReleaseAgeExcludes = [
+  "@biomejs/biome",
+  "@types/bun",
+  "oxlint",
+  "oxlint-tsgolint",
+  "turbo",
+  "typescript",
+]
+
+[test]
+coverage = false

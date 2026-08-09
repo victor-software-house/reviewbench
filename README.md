@@ -21,6 +21,17 @@ It is a new public project combining three deliberately separate strengths:
 Reviewbench has no Node runtime or Node transport path. Bun is the application,
 tooling, test, and packaging runtime.
 
+## Develop
+
+```sh
+direnv allow
+mise install --locked
+mise run verify
+```
+
+The repository is a Bun workspace orchestrated by Turborepo and mise. Package
+scripts are atomic; repository gates live in `mise.toml`.
+
 See [architecture](docs/architecture.md), [decisions](docs/decisions.md), and the
 [foundation plan](docs/plan.md).
 

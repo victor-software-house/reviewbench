@@ -1,0 +1,59 @@
+min_version = "2026.8.2"
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tools]
+bun = "1.3.14"
+
+[settings]
+lockfile = true
+experimental = true
+task.run_auto_install = true
+fetch_remote_versions_cache = "12h"
+
+[deps.bun]
+auto = true
+run = "bun install --frozen-lockfile"
+
+[tasks.verify]
+description = "Run the complete CI-safe repository gate"
+depends = ["lint", "typecheck", "test"]
+
+[tasks.build]
+description = "Build every workspace package"
+run = "turbo run build"
+
+[tasks.typecheck]
+description = "Typecheck every workspace package"
+run = "turbo run typecheck"
+
+[tasks.test]
+description = "Run every workspace package test"
+run = "turbo run test"
+
+[tasks.lint]
+description = "Biome and type-aware oxlint"
+depends = ["build"]
+run = ["biome check .", "oxlint"]
+
+[tasks.format]
+description = "Format tracked source and documentation"
+run = "biome format --write ."
+
+[tasks."format:check"]
+description = "Check formatting"
+run = "biome format ."
+
+[tasks.commitlint]
+description = "Validate one Conventional Commit message"
+raw_args = true
+run = "commitlint --edit"
+
+[tasks."lockfile:sync"]
+description = "Require package metadata and bun.lock to agree"
+run = ["bun install --lockfile-only", "git diff --exit-code -- bun.lock"]
+
+[tasks."hooks:install"]
+description = "Install repository Git hooks"
+run = "lefthook install"
