@@ -26,7 +26,7 @@ const workspace: ReviewWorkspaceInfo = {
       deletions: 1,
       hunkCount: 1,
       patch: "@@ -1 +1 @@\n-const old = 1\n+const next = 2",
-      hunks: [{ id: "hunk:a:0", index: 0, header: "@@ -1 +1 @@" }],
+      hunks: [{ id: "document:a:hunk:0:1:1", index: 0, header: "@@ -1 +1 @@" }],
     },
     {
       id: "document:b",
@@ -42,14 +42,14 @@ const workspace: ReviewWorkspaceInfo = {
 const state: ReviewWorkspaceState = {
   id: "workspace-1",
   selectedDocumentId: "document:a",
-  selectedHunkId: "hunk:a:0",
+  selectedHunkId: "document:a:hunk:0:1:1",
   showAgentNotes: true,
   notes: [
     {
       id: "note-1",
       source: "agent",
       documentId: "document:a",
-      target: { documentId: "document:a", hunkId: "hunk:a:0", side: "new", line: 1 },
+      target: { documentId: "document:a", hunkId: "document:a:hunk:0:1:1", side: "new", line: 1 },
       summary: "Check the boundary",
       body: "The new value changes the public behavior.",
       createdAt: "2026-08-09T12:00:00.000Z",
@@ -109,6 +109,13 @@ describe("Reviewbench project shell loader", () => {
         "a.ts",
         "new.ts",
       ]);
+      expect(loaded.workspace.documents[0]).toMatchObject({
+        additions: 1,
+        deletions: 1,
+        hunkCount: 1,
+      });
+      expect(loaded.workspace.documents[0]?.patch).toContain("const value = 2");
+      expect(loaded.workspace.documents[1]).toMatchObject({ additions: 1, hunkCount: 1 });
       expect(loaded.workspace.source).toEqual({ kind: "working-tree", staged: false });
       expect(loaded.history[0]?.subject).toBe("initial source");
     } finally {
@@ -128,6 +135,7 @@ describe("Reviewbench Solid shell", () => {
       expect(frame).toContain("src/b.ts");
       expect(frame).toContain("main...feature");
       expect(frame).toContain("const next = 2");
+      expect(frame).toContain("Check the boundary");
     } finally {
       harness.renderer.destroy();
     }

@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { summarizePatch } from "@victor-software-house/reviewbench-diff-engine";
 import type {
   ReviewWorkspaceInfo,
   ReviewWorkspaceState,
@@ -10,6 +12,27 @@ function git(cwd: string, args: string[]) {
   return result.exitCode === 0 ? result.stdout.toString() : "";
 }
 
+/** Encode an untracked text file as a minimal unified patch without a platform-specific null path. */
+function untrackedPatch(root: string, path: string) {
+  const text = readFileSync(resolve(root, path), "utf8");
+  if (text.includes("\0")) return "";
+  const hasFinalNewline = text.endsWith("\n");
+  const lines = text.split("\n");
+  if (hasFinalNewline) lines.pop();
+  const body = lines.map((line) => `+${line}`).join("\n");
+  const missingNewline =
+    !hasFinalNewline && lines.length > 0 ? "\n\\ No newline at end of file" : "";
+  return [
+    `diff --git a/${path} b/${path}`,
+    "new file mode 100644",
+    "--- /dev/null",
+    `+++ b/${path}`,
+    `@@ -0,0 +1,${lines.length} @@`,
+    `${body}${missingNewline}`,
+    "",
+  ].join("\n");
+}
+
 /** Load the narrow project facts needed by the shell without owning diff parsing or rendering. */
 export function loadProjectShell(path = process.cwd()): {
   workspace: ReviewWorkspaceInfo;
@@ -19,22 +42,25 @@ export function loadProjectShell(path = process.cwd()): {
   const cwd = resolve(path);
   const repoRoot = git(cwd, ["rev-parse", "--show-toplevel"]).trim() || undefined;
   const root = repoRoot ?? cwd;
-  const documentPaths = [
-    ...new Set(
-      [
-        ...git(root, ["diff", "--name-only", "-z", "HEAD"]).split("\0"),
-        ...git(root, ["ls-files", "--others", "--exclude-standard", "-z"]).split("\0"),
-      ].filter(Boolean),
-    ),
-  ].toSorted();
-  const documents = documentPaths.map((documentPath) => ({
-    id: `document:${documentPath}`,
-    path: documentPath,
-    additions: 0,
-    deletions: 0,
-    hunkCount: 0,
-    hunks: [],
-  }));
+  const trackedPaths = git(root, ["diff", "--name-only", "-z", "HEAD"]).split("\0").filter(Boolean);
+  const untrackedPaths = git(root, ["ls-files", "--others", "--exclude-standard", "-z"])
+    .split("\0")
+    .filter(Boolean);
+  const untracked = new Set(untrackedPaths);
+  const documentPaths = [...new Set([...trackedPaths, ...untrackedPaths])].toSorted();
+  const documents = documentPaths.map((documentPath) => {
+    const id = `document:${documentPath}`;
+    const patch = untracked.has(documentPath)
+      ? untrackedPatch(root, documentPath)
+      : git(root, ["diff", "--binary", "HEAD", "--", documentPath]);
+    const summary = summarizePatch(id, documentPath, patch);
+    return {
+      id,
+      path: documentPath,
+      ...summary,
+      ...(patch ? { patch } : {}),
+    };
+  });
   const history: GitHistoryEntry[] = [];
   const historyRecords = git(root, [
     "log",

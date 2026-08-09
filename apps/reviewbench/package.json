@@ -13,6 +13,7 @@
   "dependencies": {
     "@opentui/core": "0.5.1",
     "@opentui/solid": "0.5.1",
+    "@victor-software-house/reviewbench-diff-engine": "workspace:*",
     "@victor-software-house/reviewbench-protocol": "workspace:*",
     "@victor-software-house/reviewbench-session-daemon": "workspace:*",
     "solid-js": "1.9.12"

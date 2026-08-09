@@ -37,6 +37,12 @@ export function App(props: AppProps) {
   const review = createReview(props.state);
   const host = createReviewbenchHost({ workspace, review });
   const colors = createMemo(() => colorsFor(settings.settings.theme));
+  const reviewWidth = createMemo(() =>
+    Math.max(
+      40,
+      renderer.width - (settings.settings.sidebarVisible ? settings.settings.sidebarWidth : 0),
+    ),
+  );
 
   onMount(() => props.onHostReady?.(host));
   createEffect(() => {
@@ -106,7 +112,10 @@ export function App(props: AppProps) {
           sidebarView={sidebar.view()}
           selectedHistory={history.selected()}
           selectedNote={review.selectedNote()}
+          notes={review.notes()}
+          width={reviewWidth()}
           wrap={settings.settings.wrap}
+          theme={settings.settings.theme}
           colors={colors()}
         />
       </box>

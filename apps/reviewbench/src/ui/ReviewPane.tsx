@@ -1,3 +1,7 @@
+import {
+  REVIEWBENCH_DARK_THEME,
+  REVIEWBENCH_LIGHT_THEME,
+} from "@victor-software-house/reviewbench-diff-engine";
 import type {
   ReviewDocument,
   ReviewNote,
@@ -5,6 +9,7 @@ import type {
 } from "@victor-software-house/reviewbench-protocol";
 import { For, Show } from "solid-js";
 import type { GitHistoryEntry, SidebarView } from "../core/shell";
+import { DiffView } from "./DiffView";
 import type { ShellColors } from "./theme";
 
 interface ReviewPaneProps {
@@ -13,11 +18,14 @@ interface ReviewPaneProps {
   sidebarView: SidebarView;
   selectedHistory: GitHistoryEntry | null;
   selectedNote: ReviewNote | null;
+  notes: readonly ReviewNote[];
+  width: number;
   wrap: boolean;
+  theme: "dark" | "light";
   colors: ShellColors;
 }
 
-/** Thin shell pane; task 14 replaces its plain patch rows with framework-neutral diff plans. */
+/** Review surface with non-diff views around one shared diff-plan renderer path. */
 export function ReviewPane(props: ReviewPaneProps) {
   return (
     <box flexDirection="column" flexGrow={1} backgroundColor={props.colors.bg}>
@@ -92,14 +100,15 @@ export function ReviewPane(props: ReviewPaneProps) {
                     />
                   }
                 >
-                  {(patch) => (
-                    <text
-                      fg={props.colors.text}
-                      bg={props.colors.bg}
-                      content={patch()}
-                      wrapMode={props.wrap ? "word" : "none"}
-                    />
-                  )}
+                  <DiffView
+                    document={document()}
+                    notes={props.notes}
+                    width={props.width}
+                    wrap={props.wrap}
+                    theme={
+                      props.theme === "dark" ? REVIEWBENCH_DARK_THEME : REVIEWBENCH_LIGHT_THEME
+                    }
+                  />
                 </Show>
               </box>
             </scrollbox>
