@@ -3,6 +3,8 @@ linker = "isolated"
 minimumReleaseAge = 259200
 minimumReleaseAgeExcludes = [
   "@biomejs/biome",
+  "@turbo/darwin-arm64",
+  "@turbo/linux-64",
   "@types/bun",
   "oxlint",
   "oxlint-tsgolint",
