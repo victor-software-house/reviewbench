@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "Bun-only Reviewbench session broker, daemon lifecycle, connection, and HTTP/WebSocket transport.",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@victor-software-house/reviewbench-session-core": "workspace:*"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit -p tsconfig.json",

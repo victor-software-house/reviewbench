@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { packageIdentity } from "./index";
+import { SESSION_BROKER_REGISTRATION_VERSION } from "./index";
 
-describe("session-core package", () => {
-  test("exposes its stable workspace identity", () => {
-    expect(packageIdentity).toBe("session-core");
+describe("session-core package surface", () => {
+  test("exports the broker registration contract", () => {
+    expect(SESSION_BROKER_REGISTRATION_VERSION).toBe(2);
   });
 });

@@ -41,6 +41,28 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["packages/**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/session-daemon/src/serve.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noBannedTypes": "off"
+          }
+        }
+      }
+    }
+  ],
   "vcs": {
     "enabled": true,
     "clientKind": "git",

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { packageIdentity } from "./index";
+import { DEFAULT_SESSION_BROKER_HEALTH_PATH } from "./index";
 
-describe("session-daemon package", () => {
-  test("exposes its stable workspace identity", () => {
-    expect(packageIdentity).toBe("session-daemon");
+describe("session-daemon package surface", () => {
+  test("exports the Bun daemon health contract", () => {
+    expect(DEFAULT_SESSION_BROKER_HEALTH_PATH).toBe("/health");
   });
 });

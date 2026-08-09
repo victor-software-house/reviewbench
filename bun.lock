@@ -36,6 +36,9 @@
     "packages/session-daemon": {
       "name": "@victor-software-house/reviewbench-session-daemon",
       "version": "0.0.0",
+      "dependencies": {
+        "@victor-software-house/reviewbench-session-core": "workspace:*",
+      },
     },
     "packages/test-kit": {
       "name": "@victor-software-house/reviewbench-test-kit",

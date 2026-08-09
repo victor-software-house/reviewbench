@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "Runtime-neutral Reviewbench session registration, snapshot, selector, wire, and limit primitives.",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit -p tsconfig.json",
