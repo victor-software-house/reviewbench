@@ -34,9 +34,15 @@ actions. Hunk view options stay outside review-source identity.
 ## Frontend
 
 The Solid composition root creates controllers once and wires them in dependency
-order. Druk-derived shell patterns own project state, document tabs, settings,
-theme, editor, sidebar, Git/history, and review notes. Presentational UI receives
-reactive props and callbacks; it does not import the composition root.
+order. The first shell slice has separate settings, review-workspace, sidebar,
+Git-history, and review-note controllers. Presentational `ui/` modules receive
+reactive props and callbacks and never import the composition root.
+
+The shell currently loads one local project, opens its changed documents as tabs,
+and provides Files, Git comparison, History, and Notes sidebar surfaces. Theme,
+sidebar visibility/width, and wrapping are process-global settings rather than tab
+state. The main pane intentionally renders plain patch text until `diff-engine`
+provides the one framework-neutral plan path.
 
 Review workspaces are process-level project/range identities. Document tabs live
 inside the active review workspace. They are not interchangeable.

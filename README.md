@@ -21,12 +21,18 @@ It is a new public project combining three deliberately separate strengths:
 Reviewbench has no Node runtime or Node transport path. Bun is the application,
 tooling, test, and packaging runtime.
 
+The current shell opens one project, keeps review workspaces above document tabs,
+and exposes Files, Git comparison, History, and Notes surfaces with process-global
+theme, sidebar, and wrapping settings. Its patch body is deliberately plain until
+the framework-neutral Hunk-quality diff plan lands.
+
 ## Develop
 
 ```sh
 direnv allow
 mise install --locked
 mise run verify
+bun run apps/reviewbench/src/index.tsx .
 ```
 
 The repository is a Bun workspace orchestrated by Turborepo and mise. Package

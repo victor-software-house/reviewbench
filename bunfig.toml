@@ -1,16 +1,22 @@
+preload = ["@opentui/solid/preload"]
+
 [install]
 linker = "isolated"
 minimumReleaseAge = 259200
 minimumReleaseAgeExcludes = [
   "@biomejs/biome",
+  "@opentui/core",
+  "@opentui/solid",
   "@turbo/darwin-arm64",
   "@turbo/linux-64",
   "@types/bun",
   "oxlint",
   "oxlint-tsgolint",
+  "solid-js",
   "turbo",
   "typescript",
 ]
 
 [test]
+preload = ["@opentui/solid/preload"]
 coverage = false

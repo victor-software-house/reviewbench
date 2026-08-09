@@ -3,9 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "Reviewbench Solid/OpenTUI application shell.",
+  "sideEffects": false,
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun run build.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "bun test"
+    "test": "bun test --no-cache"
+  },
+  "dependencies": {
+    "@opentui/core": "0.5.1",
+    "@opentui/solid": "0.5.1",
+    "@victor-software-house/reviewbench-protocol": "workspace:*",
+    "solid-js": "1.9.12"
   }
 }

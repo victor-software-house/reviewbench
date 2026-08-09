@@ -61,6 +61,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/reviewbench/src/ui/**/*.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off"
+          }
+        }
+      }
     }
   ],
   "vcs": {
