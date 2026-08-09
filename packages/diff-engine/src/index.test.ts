@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  computeHunkRevealScrollTop,
   createDiffPlan,
   expandDiffTabs,
   measureWrappedSpans,
@@ -64,6 +65,22 @@ describe("diff-engine package", () => {
     expect(sanitizeDiffText("safe\u001b[31mred\u001b[0m\u0007")).toBe("safered");
     expect(measureWrappedSpans([{ text: "界界界" }], 4, true)).toBe(2);
     expect(measureWrappedSpans([{ text: "界界界" }], 4, false)).toBe(1);
+    expect(
+      computeHunkRevealScrollTop({
+        hunkTop: 20,
+        hunkHeight: 3,
+        preferredTopPadding: 1,
+        viewportHeight: 8,
+      }),
+    ).toBe(19);
+    expect(
+      computeHunkRevealScrollTop({
+        hunkTop: 20,
+        hunkHeight: 12,
+        preferredTopPadding: 1,
+        viewportHeight: 8,
+      }),
+    ).toBe(19);
   });
 
   test("represents collapsed context gaps and exact annotation anchors", async () => {

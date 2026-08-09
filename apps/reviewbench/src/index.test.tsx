@@ -2,12 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { ScrollBoxRenderable } from "@opentui/core";
 import { testRender } from "@opentui/solid";
 import type {
   ReviewWorkspaceInfo,
   ReviewWorkspaceState,
 } from "@victor-software-house/reviewbench-protocol";
 import { App } from "./app/App";
+import type { ReviewbenchHost } from "./app/host";
 import { loadProjectShell } from "./app/project";
 import { createWorkspace } from "./app/workspace";
 import { colorsFor } from "./ui/theme";
@@ -46,8 +48,9 @@ const workspace: ReviewWorkspaceInfo = {
       path: "src/b.ts",
       additions: 1,
       deletions: 0,
-      hunkCount: 0,
-      hunks: [],
+      hunkCount: 1,
+      patch: "@@ -0,0 +1 @@\n+export const b = true",
+      hunks: [{ id: "document:b:hunk:0:0:1", index: 0, header: "@@ -0,0 +1 @@" }],
     },
   ],
 };
@@ -140,7 +143,6 @@ describe("Reviewbench project shell loader", () => {
 describe("Reviewbench Solid shell", () => {
   test("traverses exact hunk identities in document order", () => {
     const secondHunk = { id: "document:a:hunk:1:20:20", index: 1, header: "@@ -20 +20 @@" };
-    const bHunk = { id: "document:b:hunk:0:1:1", index: 0, header: "@@ -1 +1 @@" };
     const [firstDocument, secondDocument] = workspace.documents;
     if (!firstDocument || !secondDocument) throw new Error("Expected two fixture documents.");
     const controller = createWorkspace(
@@ -148,20 +150,28 @@ describe("Reviewbench Solid shell", () => {
         ...workspace,
         documents: [
           { ...firstDocument, hunks: [...firstDocument.hunks, secondHunk] },
-          { ...secondDocument, hunks: [bHunk] },
+          secondDocument,
         ],
       },
       { id: state.id, showAgentNotes: state.showAgentNotes, notes: state.notes },
     );
 
     expect(controller.selectedHunkId()).toBe("document:a:hunk:0:1:1");
+    expect(controller.revealRequestId()).toBe(0);
     controller.moveHunk(1);
     expect(controller.selectedHunkId()).toBe(secondHunk.id);
+    expect(controller.revealRequestId()).toBe(1);
     controller.moveHunk(1);
-    expect(controller.selectedHunkId()).toBe(bHunk.id);
+    expect(controller.selectedHunkId()).toBe("document:b:hunk:0:0:1");
     expect(controller.activeDocumentId()).toBe("document:b");
     controller.moveHunk(-1);
     expect(controller.selectedHunkId()).toBe(secondHunk.id);
+
+    const revealRequestId = controller.revealRequestId();
+    controller.syncViewport("document:b", "document:b:hunk:0:0:1");
+    expect(controller.activeDocumentId()).toBe("document:b");
+    expect(controller.selectedHunkId()).toBe("document:b:hunk:0:0:1");
+    expect(controller.revealRequestId()).toBe(revealRequestId);
   });
 
   test("renders a compact review hierarchy instead of scaffold chrome", async () => {
@@ -175,6 +185,7 @@ describe("Reviewbench Solid shell", () => {
       expect(frame).toContain("+2 -1");
       expect(frame).toContain("src/b.ts");
       expect(frame).toContain("const next = 2");
+      expect(frame).toContain("export const b = true");
       expect(frame).toContain("Check the boundary");
       expect(frame).toContain("▎ @@");
       expect(frame).toContain("[ / ] hunks");
@@ -215,6 +226,111 @@ describe("Reviewbench Solid shell", () => {
       expect(notes).toContain("REVIEW NOTES");
       expect(notes).toContain("Check the boundary");
       expect(notes).toContain("The new value changes the public behavior.");
+    } finally {
+      harness.renderer.destroy();
+    }
+  });
+
+  test("keeps every document mounted while file and agent navigation reveal exact targets", async () => {
+    const tallPatch = [
+      "@@ -1,12 +1,12 @@",
+      ...Array.from({ length: 12 }, (_, index) => `-const old${index} = ${index}`),
+      ...Array.from({ length: 12 }, (_, index) => `+const next${index} = ${index + 1}`),
+    ].join("\n");
+    const [firstDocument, secondDocument] = workspace.documents;
+    if (!firstDocument || !secondDocument) throw new Error("Expected two fixture documents.");
+    const streamWorkspace: ReviewWorkspaceInfo = {
+      ...workspace,
+      documents: [
+        {
+          ...firstDocument,
+          patch: tallPatch,
+          additions: 12,
+          deletions: 12,
+          hunks: [{ id: "document:a:hunk:0:1:1", index: 0, header: "@@ -1,12 +1,12 @@" }],
+        },
+        {
+          ...secondDocument,
+          patch: "@@ -0,0 +1 @@\n+export const second_target = true",
+        },
+      ],
+    };
+    let host: ReviewbenchHost | undefined;
+    const harness = await testRender(
+      () => (
+        <App
+          workspace={streamWorkspace}
+          state={state}
+          onHostReady={(readyHost) => {
+            host = readyHost;
+          }}
+        />
+      ),
+      { width: 100, height: 10, exitOnCtrlC: false },
+    );
+
+    try {
+      await harness.flush();
+      expect(
+        harness.renderer.root.findDescendantById("review-stream-section:document:a"),
+      ).toBeDefined();
+      expect(
+        harness.renderer.root.findDescendantById("review-stream-section:document:b"),
+      ).toBeDefined();
+      expect(harness.captureCharFrame()).not.toContain("second_target");
+      expect(harness.renderer.root.findDescendantById("review-stream-scrollbar")).toBeUndefined();
+
+      await harness.mockInput.typeText("j");
+      await harness.flush();
+      const scrollBox = harness.renderer.root.findDescendantById("review-stream-scroll");
+      const thumb = harness.renderer.root.findDescendantById("review-stream-scrollbar-thumb");
+      const track = harness.renderer.root.findDescendantById("review-stream-scrollbar-track");
+      if (!scrollBox || !thumb || !track) throw new Error("Expected Hunk-style scrollbar.");
+      const afterStep = (scrollBox as ScrollBoxRenderable).scrollTop;
+      await harness.mockMouse.drag(
+        thumb.x,
+        thumb.y,
+        thumb.x,
+        Math.min(track.y + track.height - 1, thumb.y + 2),
+      );
+      await harness.flush();
+      const afterDrag = (scrollBox as ScrollBoxRenderable).scrollTop;
+      expect(afterDrag).toBeGreaterThan(afterStep);
+      await harness.mockMouse.click(track.x, track.y);
+      await harness.flush();
+      expect((scrollBox as ScrollBoxRenderable).scrollTop).toBeLessThan(afterDrag);
+
+      await harness.mockInput.typeText("]");
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("second_target");
+
+      await harness.mockInput.typeText("g");
+      await harness.flush();
+      await harness.mockInput.typeText(".");
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("second_target");
+
+      await harness.mockInput.typeText("g");
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("const old0 = 0");
+
+      if (!host) throw new Error("Expected Reviewbench host.");
+      expect(host.snapshot().workspaces[0]?.selectedDocumentId).toBe("document:a");
+      await host.dispatchCommand({
+        type: "command",
+        requestId: "navigate-b",
+        command: "review.navigate",
+        input: {
+          sessionId: "session-1",
+          target: { documentId: "document:b", hunkId: "document:b:hunk:0:0:1" },
+        },
+      });
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("second_target");
+
+      await Bun.sleep(2_100);
+      await harness.flush();
+      expect(harness.renderer.root.findDescendantById("review-stream-scrollbar")).toBeUndefined();
     } finally {
       harness.renderer.destroy();
     }

@@ -3,6 +3,7 @@ export interface ShellColors {
   panel: string;
   panelAlt: string;
   bar: string;
+  border: string;
   text: string;
   dim: string;
   faint: string;
@@ -20,6 +21,7 @@ const themes: Record<"dark" | "light", ShellColors> = {
     panel: "#11161d",
     panelAlt: "#161b22",
     bar: "#161b22",
+    border: "#30363d",
     text: "#e6edf3",
     dim: "#8b949e",
     faint: "#6e7681",
@@ -35,6 +37,7 @@ const themes: Record<"dark" | "light", ShellColors> = {
     panel: "#f6f8fa",
     panelAlt: "#eaeef2",
     bar: "#eaeef2",
+    border: "#d0d7de",
     text: "#1f2328",
     dim: "#656d76",
     faint: "#8c959f",

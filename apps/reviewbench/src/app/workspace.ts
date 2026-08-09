@@ -19,25 +19,43 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
   const [selectedHunkId, setSelectedHunkId] = createSignal<string | null>(
     state.selectedHunkId ?? initialDocument?.hunks[0]?.id ?? null,
   );
+  const [revealRequestId, setRevealRequestId] = createSignal(0);
 
-  const openDocument = (documentId: string) => {
-    if (!documents.has(documentId)) return;
-    setTabIds((ids) => (ids.includes(documentId) ? ids : [...ids, documentId]));
-    setActiveDocumentId(documentId);
-    const document = documents.get(documentId);
-    if (!document?.hunks.some((hunk) => hunk.id === selectedHunkId())) {
-      setSelectedHunkId(document?.hunks[0]?.id ?? null);
-    }
-  };
-
-  const navigate = (documentId: string, hunkId?: string) => {
+  const selectDocument = (documentId: string, hunkId: string | null, reveal: boolean) => {
     const document = documents.get(documentId);
     if (!document) throw new Error(`Unknown review document ${documentId}.`);
     if (hunkId && !document.hunks.some((hunk) => hunk.id === hunkId)) {
       throw new Error(`Unknown review hunk ${hunkId} in ${document.path}.`);
     }
-    openDocument(documentId);
+    setActiveDocumentId(documentId);
     setSelectedHunkId(hunkId ?? document.hunks[0]?.id ?? null);
+    if (reveal) setRevealRequestId((requestId) => requestId + 1);
+  };
+
+  const openDocument = (documentId: string) => {
+    const document = documents.get(documentId);
+    if (!document) return;
+    setTabIds((ids) => (ids.includes(documentId) ? ids : [...ids, documentId]));
+    const currentHunkId = selectedHunkId();
+    selectDocument(
+      documentId,
+      document.hunks.some((hunk) => hunk.id === currentHunkId)
+        ? currentHunkId
+        : (document.hunks[0]?.id ?? null),
+      true,
+    );
+  };
+
+  const navigate = (documentId: string, hunkId?: string) => {
+    const document = documents.get(documentId);
+    if (!document) throw new Error(`Unknown review document ${documentId}.`);
+    setTabIds((ids) => (ids.includes(documentId) ? ids : [...ids, documentId]));
+    selectDocument(documentId, hunkId ?? document.hunks[0]?.id ?? null, true);
+  };
+
+  /** Follow manual stream scrolling without issuing another imperative reveal. */
+  const syncViewport = (documentId: string, hunkId?: string) => {
+    selectDocument(documentId, hunkId ?? null, false);
   };
 
   const closeDocument = (documentId: string) => {
@@ -46,7 +64,13 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
     const next = current.filter((id) => id !== documentId);
     setTabIds(next);
     if (activeDocumentId() === documentId) {
-      setActiveDocumentId(next[closedIndex] ?? next[closedIndex - 1] ?? null);
+      const nextDocumentId = next[closedIndex] ?? next[closedIndex - 1] ?? null;
+      if (nextDocumentId) {
+        navigate(nextDocumentId);
+      } else {
+        setActiveDocumentId(null);
+        setSelectedHunkId(null);
+      }
     }
   };
 
@@ -93,9 +117,11 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
     activeDocumentId,
     activeDocument,
     selectedHunkId,
+    revealRequestId,
     openDocument,
     closeDocument,
     navigate,
+    syncViewport,
     moveDocument,
     moveHunk,
   };

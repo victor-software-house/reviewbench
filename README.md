@@ -13,8 +13,9 @@ It is a new public project combining three deliberately separate strengths:
 
 **Runnable architecture slice.** The foundation gate is complete: one Bun daemon-backed
 Solid/OpenTUI host is controllable through the existing Hunk CLI compatibility surface,
-and its sole diff path renders framework-neutral Pierre/Shiki plans with word emphasis,
-exact syntax scopes, split/stack geometry, wrapping, folds, themes, and line-anchored notes.
+and its sole diff path renders every changed file in one continuous, bounded
+Pierre/Shiki review stream with word emphasis, exact syntax scopes, split/stack
+geometry, wrapping, folds, themes, and line-anchored notes.
 
 The measured gate selected Reviewbench as the successor. Hunk remains the temporary
 behavior oracle and fallback while Reviewbench closes explicit parity gaps in visible,
@@ -37,7 +38,9 @@ mise run demo .     # your current project
 The command builds first and opens the real compiled TUI. Resize wide for split view.
 Reviewbench keeps Hunk's bindings for equivalent actions: `q` quits, `s` toggles the
 sidebar, `t` switches theme, `w` toggles wrapping, `0`/`1`/`2` select
-auto/split/stack, `,`/`.` move between files, and `[`/`]` move between hunks.
+auto/split/stack, `,`/`.` reveal files, and `[`/`]` reveal hunks in the shared stream.
+Scroll with `j`/`k` or arrows, `d`/`u` by half pages, PageUp/PageDown,
+Space/Shift+Space or `f`/`b` by pages, and `g`/`G` or Home/End to the bounds.
 Sidebar surfaces remain clickable until their matching Hunk command model exists; they
 do not steal unrelated keys. Each future closed feature slice must keep this demo
 runnable before the next slice begins.

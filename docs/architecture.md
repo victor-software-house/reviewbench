@@ -41,14 +41,23 @@ reactive props and callbacks and never import the composition root.
 The shell currently loads one local project, opens its changed documents as tabs,
 and provides Files, Git comparison, History, and Notes sidebar surfaces. One compact
 review header owns project/source totals; a subordinate document strip, bounded
-navigation rail, fixed file summary, and progressive footer establish the visual
-hierarchy. Theme, sidebar visibility/width, wrapping, and auto/split/stack layout are
-process-global settings rather than tab state. The main pane asynchronously projects
-the selected document through the one framework-neutral diff plan; no plain-patch or
-OpenTUI built-in diff fallback remains.
+navigation rail, in-stream file summaries, and progressive footer establish the
+visual hierarchy. Theme, sidebar visibility/width, wrapping, and auto/split/stack
+layout are process-global settings rather than tab state. The main pane asynchronously
+plans every changed document and projects them into one ordered OpenTUI scrollbox;
+tabs, sidebar rows, file/hunk keys, row clicks, and agent commands reveal exact stable
+targets without replacing the stream. Manual scrolling follows the viewport-centered
+planned row without issuing another reveal, so active identity stays exact without a
+scroll feedback loop. Review scrolling uses Hunk's tuned macOS wheel acceleration and
+one-column overlay scrollbar: hidden until activity, auto-hidden after two seconds,
+draggable by its proportional thumb, and viewport-paged from track clicks. OpenTUI's
+built-in scrollbar stays disabled. No selected-document, plain-patch, or OpenTUI
+built-in diff fallback remains.
 
 Equivalent actions use Hunk's default chords (`q`, `s`, `t`, `w`, `0`/`1`/`2`,
-`,`/`.`, and `[`/`]`). Sidebar surfaces without a matching Hunk command stay clickable
+`,`/`.`, and `[`/`]`). Hunk's row/page/content scroll bindings also address the same
+stream (`j`/`k`, arrows, `d`/`u`, PageUp/PageDown, Space/Shift+Space, `f`/`b`,
+`g`/`G`, and Home/End). Sidebar surfaces without a matching Hunk command stay clickable
 instead of stealing unrelated keys. Document and hunk traversal use the same exact
 identities exposed to agent navigation.
 

@@ -1,39 +1,23 @@
-import {
-  createDiffPlan,
-  type DiffAnnotation,
-  type DiffCellPlan,
-  type DiffPlanRow,
-  type DiffRenderPlan,
-  type DiffSpan,
-  type DiffTheme,
+import type {
+  DiffCellPlan,
+  DiffPlanRow,
+  DiffRenderPlan,
+  DiffSpan,
+  DiffTheme,
 } from "@victor-software-house/reviewbench-diff-engine";
-import type { ReviewDocument, ReviewNote } from "@victor-software-house/reviewbench-protocol";
-import { createResource, For, Match, Show, Switch } from "solid-js";
+import { For, Match, Show, Switch } from "solid-js";
 
 interface DiffViewProps {
-  document: ReviewDocument;
-  notes: readonly ReviewNote[];
-  width: number;
+  plan: DiffRenderPlan;
   wrap: boolean;
   theme: DiffTheme;
-  layout: "auto" | "split" | "stack";
   selectedHunkId: string | null;
+  onSelectTarget?: ((documentId: string, hunkId: string) => void) | undefined;
 }
 
-function annotationsFor(documentId: string, notes: readonly ReviewNote[]): DiffAnnotation[] {
-  return notes.flatMap((note) => {
-    if (note.documentId !== documentId || !note.target || !("hunkId" in note.target)) return [];
-    return [
-      {
-        id: note.id,
-        summary: note.summary,
-        ...(note.body === undefined ? {} : { body: note.body }),
-        hunkId: note.target.hunkId,
-        ...(note.target && "side" in note.target ? { side: note.target.side } : {}),
-        ...(note.target && "line" in note.target ? { line: note.target.line } : {}),
-      },
-    ];
-  });
+/** Stable OpenTUI identity for one planned diff row inside the continuous stream. */
+export function reviewStreamRowId(documentId: string, rowKey: string) {
+  return `review-stream-row:${documentId}:${rowKey}`;
 }
 
 function lineBackground(cell: DiffCellPlan, theme: DiffTheme) {
@@ -238,49 +222,28 @@ function PlannedRow(props: {
   );
 }
 
-/** Thin Solid projection over the framework-neutral, geometry-owning diff plan. */
+/** Thin Solid projection over one framework-neutral section of the review stream. */
 export function DiffView(props: DiffViewProps) {
-  const [plan] = createResource(
-    () => {
-      if (!props.document.patch) return false;
-      return {
-        documentId: props.document.id,
-        path: props.document.path,
-        patch: props.document.patch,
-        layout: props.layout === "auto" ? (props.width >= 100 ? "split" : "stack") : props.layout,
-        width: props.width,
-        wrap: props.wrap,
-        theme: props.theme,
-        annotations: annotationsFor(props.document.id, props.notes),
-      };
-    },
-    async (input) => createDiffPlan(input),
-  );
-
   return (
-    <Show
-      when={plan()}
-      fallback={
-        <text
-          fg={props.theme.muted}
-          bg={props.theme.background}
-          content={plan.error ? `Diff unavailable: ${String(plan.error)}` : "Preparing diff…"}
-        />
-      }
-    >
-      {(resolved) => (
-        <For each={resolved().rows}>
-          {(row) => (
-            <PlannedRow
-              row={row}
-              plan={resolved()}
-              wrap={props.wrap}
-              theme={props.theme}
-              selectedHunkId={props.selectedHunkId}
-            />
-          )}
-        </For>
+    <For each={props.plan.rows}>
+      {(row) => (
+        <box
+          id={reviewStreamRowId(props.plan.documentId, row.key)}
+          height={row.height}
+          flexDirection="column"
+          onMouseDown={() => {
+            if ("hunkId" in row) props.onSelectTarget?.(props.plan.documentId, row.hunkId);
+          }}
+        >
+          <PlannedRow
+            row={row}
+            plan={props.plan}
+            wrap={props.wrap}
+            theme={props.theme}
+            selectedHunkId={props.selectedHunkId}
+          />
+        </box>
       )}
-    </Show>
+    </For>
   );
 }

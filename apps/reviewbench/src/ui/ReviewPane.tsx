@@ -1,3 +1,4 @@
+import type { ScrollBoxRenderable } from "@opentui/core";
 import {
   REVIEWBENCH_DARK_THEME,
   REVIEWBENCH_LIGHT_THEME,
@@ -5,11 +6,12 @@ import {
 import type { ReviewDocument, ReviewNote } from "@victor-software-house/reviewbench-protocol";
 import { For, Show } from "solid-js";
 import type { GitHistoryEntry, SidebarView } from "../core/shell";
-import { DiffView } from "./DiffView";
+import { ReviewStream } from "./ReviewStream";
 import type { ShellColors } from "./theme";
 
 interface ReviewPaneProps {
-  document: ReviewDocument | null;
+  documents: readonly ReviewDocument[];
+  activeDocumentId: string | null;
   sidebarView: SidebarView;
   selectedHistory: GitHistoryEntry | null;
   selectedNote: ReviewNote | null;
@@ -19,10 +21,14 @@ interface ReviewPaneProps {
   theme: "dark" | "light";
   layout: "auto" | "split" | "stack";
   selectedHunkId: string | null;
+  revealRequestId: number;
   colors: ShellColors;
+  onSelectTarget: (documentId: string, hunkId?: string) => void;
+  onViewportTarget: (documentId: string, hunkId?: string) => void;
+  onScrollReady: (scrollBox: ScrollBoxRenderable | undefined) => void;
 }
 
-/** Review surface with one fixed file summary over the shared diff-plan renderer. */
+/** Review surface with history/note detail modes and one continuous changed-file stream. */
 export function ReviewPane(props: ReviewPaneProps) {
   return (
     <box flexDirection="column" flexGrow={1} backgroundColor={props.colors.bg}>
@@ -72,77 +78,28 @@ export function ReviewPane(props: ReviewPaneProps) {
 
       <Show when={props.sidebarView !== "history" && props.sidebarView !== "notes"}>
         <Show
-          when={props.document}
+          when={props.documents.length > 0}
           fallback={
             <box flexGrow={1} alignItems="center" justifyContent="center">
-              <text fg={props.colors.faint} bg={props.colors.bg} content="No document selected" />
+              <text fg={props.colors.faint} bg={props.colors.bg} content="No changed documents" />
             </box>
           }
         >
-          {(document) => (
-            <>
-              <box
-                height={1}
-                flexDirection="row"
-                flexShrink={0}
-                paddingLeft={1}
-                paddingRight={1}
-                backgroundColor={props.colors.panelAlt}
-              >
-                <text
-                  fg={props.colors.text}
-                  bg={props.colors.panelAlt}
-                  content={document().path}
-                  wrapMode="none"
-                />
-                <box flexGrow={1} backgroundColor={props.colors.panelAlt} />
-                <text
-                  fg={props.colors.added}
-                  bg={props.colors.panelAlt}
-                  content={`+${document().additions}`}
-                  flexShrink={0}
-                />
-                <text
-                  fg={props.colors.deleted}
-                  bg={props.colors.panelAlt}
-                  content={`  -${document().deletions}`}
-                  flexShrink={0}
-                />
-                <text
-                  fg={props.colors.faint}
-                  bg={props.colors.panelAlt}
-                  content={`  ${document().hunkCount} ${document().hunkCount === 1 ? "hunk" : "hunks"}`}
-                  flexShrink={0}
-                />
-              </box>
-              <scrollbox flexGrow={1} backgroundColor={props.colors.bg}>
-                <box flexDirection="column" paddingLeft={1} paddingRight={1}>
-                  <Show
-                    when={document().patch}
-                    fallback={
-                      <text
-                        fg={props.colors.faint}
-                        bg={props.colors.bg}
-                        content="Patch content was not included in this session snapshot."
-                      />
-                    }
-                  >
-                    <DiffView
-                      document={document()}
-                      notes={props.notes}
-                      width={Math.max(1, props.width - 2)}
-                      wrap={props.wrap}
-                      layout={props.layout}
-                      selectedHunkId={props.selectedHunkId}
-                      theme={
-                        props.theme === "dark" ? REVIEWBENCH_DARK_THEME : REVIEWBENCH_LIGHT_THEME
-                      }
-                    />
-                  </Show>
-                </box>
-              </scrollbox>
-            </>
-          )}
+          <ReviewStream
+            documents={props.documents}
+            notes={props.notes}
+            width={Math.max(1, props.width - 2)}
+            wrap={props.wrap}
+            layout={props.layout}
+            activeDocumentId={props.activeDocumentId}
+            selectedHunkId={props.selectedHunkId}
+            revealRequestId={props.revealRequestId}
+            colors={props.colors}
+            theme={props.theme === "dark" ? REVIEWBENCH_DARK_THEME : REVIEWBENCH_LIGHT_THEME}
+            onSelectTarget={props.onSelectTarget}
+            onViewportTarget={props.onViewportTarget}
+            onScrollReady={props.onScrollReady}
+          />
         </Show>
       </Show>
     </box>

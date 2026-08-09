@@ -1,4 +1,4 @@
-import { TextAttributes } from "@opentui/core";
+import { type ScrollBoxRenderable, TextAttributes } from "@opentui/core";
 import { useKeyboard, useRenderer } from "@opentui/solid";
 import type {
   ReviewWorkspaceInfo,
@@ -50,6 +50,7 @@ function sourceBadge(source: ReviewWorkspaceInfo["source"]) {
  */
 export function App(props: AppProps) {
   const renderer = useRenderer();
+  let reviewScroll: ScrollBoxRenderable | undefined;
   const settings = createSettings(props.settings);
   const workspace = createWorkspace(props.workspace, props.state);
   const sidebar = createSidebar();
@@ -88,6 +89,11 @@ export function App(props: AppProps) {
     if (state) props.onSnapshot?.(state);
   });
 
+  const scrollReview = (delta: number, unit: "absolute" | "viewport" | "content") => {
+    if (!reviewScroll) return;
+    reviewScroll.scrollBy(delta, unit);
+  };
+
   useKeyboard((key) => {
     if (key.ctrl && key.name === "c") {
       key.preventDefault();
@@ -96,10 +102,50 @@ export function App(props: AppProps) {
       return;
     }
 
-    const chord = key.sequence || key.name;
+    const chord = key.sequence && key.sequence.length === 1 ? key.sequence : key.name;
+    if (key.shift && chord === " ") {
+      scrollReview(-1, "viewport");
+      key.preventDefault();
+      key.stopPropagation();
+      return;
+    }
     switch (chord) {
       case "q":
         renderer.destroy();
+        break;
+      case "G":
+      case "end":
+        scrollReview(1, "content");
+        break;
+      case "g":
+      case "home":
+        scrollReview(-1, "content");
+        break;
+      case "pagedown":
+      case " ":
+      case "f":
+        scrollReview(1, "viewport");
+        break;
+      case "pageup":
+      case "b":
+        scrollReview(-1, "viewport");
+        break;
+      case "d":
+        scrollReview(Math.max(1, Math.floor((reviewScroll?.viewport.height ?? 1) / 2)), "absolute");
+        break;
+      case "u":
+        scrollReview(
+          -Math.max(1, Math.floor((reviewScroll?.viewport.height ?? 1) / 2)),
+          "absolute",
+        );
+        break;
+      case "down":
+      case "j":
+        scrollReview(1, "absolute");
+        break;
+      case "up":
+      case "k":
+        scrollReview(-1, "absolute");
         break;
       case "s":
         settings.toggleSidebar();
@@ -222,7 +268,8 @@ export function App(props: AppProps) {
           />
         </Show>
         <ReviewPane
-          document={workspace.activeDocument()}
+          documents={workspace.documents}
+          activeDocumentId={workspace.activeDocumentId()}
           sidebarView={sidebar.view()}
           selectedHistory={history.selected()}
           selectedNote={review.selectedNote()}
@@ -232,7 +279,13 @@ export function App(props: AppProps) {
           theme={settings.settings.theme}
           layout={settings.settings.layout}
           selectedHunkId={workspace.selectedHunkId()}
+          revealRequestId={workspace.revealRequestId()}
           colors={colors()}
+          onSelectTarget={workspace.navigate}
+          onViewportTarget={workspace.syncViewport}
+          onScrollReady={(scrollBox) => {
+            reviewScroll = scrollBox;
+          }}
         />
       </box>
       <box height={1} flexDirection="row" flexShrink={0} backgroundColor={colors().bar}>

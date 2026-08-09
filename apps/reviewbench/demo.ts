@@ -59,7 +59,19 @@ async function createDemoProject() {
       {
         "currency": "USD",
         "locale": "en-US",
-        "taxInclusive": false
+        "taxInclusive": false,
+        "regionalThresholds": {
+          "US": 150,
+          "CA": 160,
+          "GB": 140,
+          "DE": 145,
+          "FR": 145,
+          "ES": 135,
+          "IT": 135,
+          "JP": 180,
+          "AU": 170,
+          "BR": 120
+        }
       }
     `}\n`,
   );
@@ -119,7 +131,19 @@ async function createDemoProject() {
       {
         "currency": "JPY",
         "locale": "ja-JP",
-        "taxInclusive": true
+        "taxInclusive": true,
+        "regionalThresholds": {
+          "US": 100,
+          "CA": 110,
+          "GB": 95,
+          "DE": 98,
+          "FR": 98,
+          "ES": 90,
+          "IT": 90,
+          "JP": 120,
+          "AU": 115,
+          "BR": 80
+        }
       }
     `}\n`,
   );
