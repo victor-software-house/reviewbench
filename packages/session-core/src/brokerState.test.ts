@@ -120,7 +120,7 @@ const testBrokerView: SessionBrokerViewAdapter<
     sessionId: entry.registration.sessionId,
     pid: entry.registration.pid,
     cwd: entry.registration.cwd,
-    repoRoot: entry.registration.repoRoot,
+    ...(entry.registration.repoRoot === undefined ? {} : { repoRoot: entry.registration.repoRoot }),
     launchedAt: entry.registration.launchedAt,
     title: entry.registration.info.title,
     fileCount: entry.registration.info.files.length,
@@ -136,7 +136,9 @@ const testBrokerView: SessionBrokerViewAdapter<
     fileCount: entry.registration.info.files.length,
     includePatch: options.includePatch ?? false,
   }),
-  listComments: (_session, filter) => [{ id: "note-1", filePath: filter.filePath }],
+  listComments: (_session, filter) => [
+    { id: "note-1", ...(filter.filePath === undefined ? {} : { filePath: filter.filePath }) },
+  ],
 };
 
 function resolveTestSessionTarget(

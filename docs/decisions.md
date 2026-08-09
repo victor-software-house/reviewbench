@@ -10,3 +10,5 @@
 - 2026-08-09 — Preserve copyrights in this order: Ben Vinegar; Valerii Strilets; Victor Software House.
 - 2026-08-09 — Stop broad migration at a measured decision gate after one agent-controlled host slice and one Hunk-quality diff slice.
 - 2026-08-09 — Preserve Hunk's broker behavior first with package-local `exactOptionalPropertyTypes: false`; task 11 removes that extraction compatibility boundary while defining Reviewbench's exact product-neutral protocol.
+- 2026-08-09 — Version the Reviewbench protocol independently from broker registration. Stable document, hunk, side, and line identities cross the host boundary; visible paths and row positions never substitute for those identities.
+- 2026-08-09 — Keep Hunk compatibility as a validated projection from current `hunk session` requests into product-neutral review, workspace, and note actions. Hunk view options do not become review-source identity.

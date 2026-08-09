@@ -117,10 +117,12 @@ export class SessionBrokerDaemon<
     this.paths = {
       health: options.paths?.health ?? DEFAULT_SESSION_BROKER_HEALTH_PATH,
       socket: options.paths?.socket ?? DEFAULT_SESSION_BROKER_SOCKET_PATH,
-      api: exposeHttpApi ? (options.paths?.api ?? DEFAULT_SESSION_BROKER_API_PATH) : undefined,
-      capabilities: exposeHttpApi
-        ? (options.paths?.capabilities ?? DEFAULT_SESSION_BROKER_CAPABILITIES_PATH)
-        : undefined,
+      ...(exposeHttpApi
+        ? {
+            api: options.paths?.api ?? DEFAULT_SESSION_BROKER_API_PATH,
+            capabilities: options.paths?.capabilities ?? DEFAULT_SESSION_BROKER_CAPABILITIES_PATH,
+          }
+        : {}),
     };
     this.capabilities = options.capabilities ?? { version: 1 };
     this.idleTimeoutMs = options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
@@ -245,8 +247,8 @@ export class SessionBrokerDaemon<
         this.broker.handleCommandResult({
           requestId: parsed.requestId,
           ok: parsed.ok,
-          result: parsed.result as CommandResult | undefined,
-          error: typeof parsed.error === "string" ? parsed.error : undefined,
+          ...(parsed.result === undefined ? {} : { result: parsed.result as CommandResult }),
+          ...(typeof parsed.error === "string" ? { error: parsed.error } : {}),
         });
         this.noteActivity();
         break;
@@ -366,7 +368,7 @@ export class SessionBrokerDaemon<
                 { command: ServerMessage["command"] }
               >["input"],
               timeoutMessage: input.timeoutMessage ?? defaultTimeoutMessage(input.command),
-              timeoutMs: input.timeoutMs,
+              ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
             }),
           };
           break;

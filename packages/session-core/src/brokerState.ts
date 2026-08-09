@@ -65,11 +65,7 @@ export interface SessionBrokerViewAdapter<
 
 export type UpdateSnapshotResult = "updated" | "invalid" | "not-found";
 
-export interface SessionTargetSelector {
-  sessionId?: string;
-  sessionPath?: string;
-  repoRoot?: string;
-}
+export type SessionTargetSelector = SessionTargetInput;
 
 function describeSessionChoices<ListedSession extends SessionBrokerListedSession>(
   sessions: ListedSession[],

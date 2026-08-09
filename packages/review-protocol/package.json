@@ -3,9 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "Product-neutral Reviewbench sources, documents, exact targets, notes, workspaces, capabilities, and Hunk compatibility.",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "bun test"
+  },
+  "dependencies": {
+    "@victor-software-house/reviewbench-session-core": "workspace:*",
+    "zod": "4.4.3"
   }
 }

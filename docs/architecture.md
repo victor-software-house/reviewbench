@@ -21,7 +21,15 @@ Reviewbench host adapter
 
 The daemon carries registrations, snapshots, and commands without interpreting
 review state. `review-protocol` defines sources, documents, hunks, exact line
-targets, notes, reload, capabilities, and review-workspace mutations.
+targets, notes, reload, capabilities, and review-workspace mutations. Its own
+protocol version is independent from the broker registration version. Host
+capabilities are explicit so a partial host cannot silently accept an unsupported
+action.
+
+Current `hunk session` JSON remains an ingress compatibility format during the
+spike. A strict adapter validates it, resolves paths/tab labels through the live
+host, and projects it into product-neutral `review.*`, `workspace.*`, and `note.*`
+actions. Hunk view options stay outside review-source identity.
 
 ## Frontend
 

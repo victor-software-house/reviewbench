@@ -44,6 +44,6 @@ describe("session terminal metadata", () => {
   });
 
   test("returns undefined when no terminal metadata is available", () => {
-    expect(resolveSessionTerminalMetadata({ env: {}, tty: undefined })).toBeUndefined();
+    expect(resolveSessionTerminalMetadata({ env: {} })).toBeUndefined();
   });
 });

@@ -169,7 +169,10 @@ export class SessionBroker<
   }
 
   pruneStaleSessions({ ttlMs, now }: { ttlMs: number; now?: number }) {
-    return this.state.pruneStaleSessions({ ttlMs, now });
+    return this.state.pruneStaleSessions({
+      ttlMs,
+      ...(now === undefined ? {} : { now }),
+    });
   }
 
   dispatchCommand<ResultType extends CommandResult, CommandName extends ServerMessage["command"]>({
@@ -203,7 +206,7 @@ export class SessionBroker<
       command,
       input: input as Extract<ServerMessage, { command: ServerMessage["command"] }>["input"],
       timeoutMessage,
-      timeoutMs,
+      ...(timeoutMs === undefined ? {} : { timeoutMs }),
     });
   }
 
@@ -225,7 +228,9 @@ export class SessionBroker<
     return {
       sessionId: entry.registration.sessionId,
       cwd: entry.registration.cwd,
-      repoRoot: entry.registration.repoRoot,
+      ...(entry.registration.repoRoot === undefined
+        ? {}
+        : { repoRoot: entry.registration.repoRoot }),
       title: this.describeSession(entry.registration, entry.snapshot),
       connectedAt: entry.connectedAt,
       lastSeenAt: entry.lastSeenAt,

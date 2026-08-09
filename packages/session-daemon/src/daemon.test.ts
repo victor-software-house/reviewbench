@@ -91,7 +91,10 @@ function createConnection() {
         sent.push(data);
       },
       close(code?: number, reason?: string) {
-        closed = { code, reason };
+        closed = {
+          ...(code === undefined ? {} : { code }),
+          ...(reason === undefined ? {} : { reason }),
+        };
       },
     },
   };

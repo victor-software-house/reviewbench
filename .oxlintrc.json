@@ -39,22 +39,41 @@
       }
     },
     {
-      "files": [
-        "packages/session-core/src/brokerState.ts",
-        "packages/session-core/src/brokerWire.ts",
-        "packages/session-core/src/limits.ts",
-        "packages/session-daemon/src/broker.ts",
-        "packages/session-daemon/src/connection.ts",
-        "packages/session-daemon/src/daemon.ts",
-        "packages/session-daemon/src/serve.ts"
-      ],
+      "files": ["packages/session-daemon/src/serve.ts"],
       "rules": {
         "promise/always-return": "off",
         "typescript/no-floating-promises": "off",
-        "typescript/no-unnecessary-type-assertion": "off",
-        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unnecessary-type-assertion": "off"
+      }
+    },
+    {
+      "files": ["packages/session-daemon/src/connection.ts"],
+      "rules": {
         "typescript/no-unsafe-type-assertion": "off",
         "unicorn/prefer-add-event-listener": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/session-core/src/brokerState.ts",
+        "packages/session-core/src/brokerWire.ts",
+        "packages/session-daemon/src/daemon.ts"
+      ],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-unsafe-type-assertion": "off"
+      }
+    },
+    {
+      "files": ["packages/session-core/src/limits.ts"],
+      "rules": {
+        "typescript/no-unsafe-assignment": "off"
+      }
+    },
+    {
+      "files": ["packages/session-daemon/src/broker.ts"],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "off"
       }
     }
   ]
