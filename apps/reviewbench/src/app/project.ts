@@ -8,7 +8,9 @@ import type {
 import type { GitHistoryEntry } from "./history";
 
 function git(cwd: string, args: string[]) {
-  const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const executable = Bun.which("git");
+  if (!executable) throw new Error("Reviewbench requires Git on PATH.");
+  const result = Bun.spawnSync([executable, ...args], { cwd, stdout: "pipe", stderr: "pipe" });
   return result.exitCode === 0 ? result.stdout.toString() : "";
 }
 

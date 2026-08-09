@@ -52,7 +52,10 @@ describe("diff-engine package", () => {
     const variable = row.right.spans.find((span) => span.text === "value");
     const changed = row.right.spans.find((span) => span.text === "2");
     expect(variable?.fg?.toLowerCase()).toBe("#79c0ff");
-    expect(changed).toMatchObject({ emphasis: true, bg: "#264f35" });
+    expect(changed).toMatchObject({
+      emphasis: true,
+      bg: REVIEWBENCH_DARK_THEME.additionEmphasis,
+    });
   });
 
   test("measures tabs, CJK, and wrapped terminal-cell geometry", () => {
@@ -143,7 +146,7 @@ describe("diff-engine package", () => {
       "diff --git a/src/example.ts b/src/example.ts",
       "--- a/src/example.ts",
       "+++ b/src/example.ts",
-      "@@ -1 +1 @@",
+      "@@ -1 +1 @@ function quote",
       "-old",
       "+new",
       "",
@@ -151,5 +154,6 @@ describe("diff-engine package", () => {
     const summary = summarizePatch(base.documentId, base.path, patch);
     expect(summary).toMatchObject({ additions: 1, deletions: 1, hunkCount: 1 });
     expect(summary.hunks[0]?.id).toBe(`${base.documentId}:hunk:0:1:1`);
+    expect(summary.hunks[0]?.header).toBe("@@ -1 +1 @@ function quote");
   });
 });

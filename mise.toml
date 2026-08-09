@@ -24,6 +24,13 @@ depends = ["lint", "typecheck", "test"]
 description = "Build every workspace package"
 run = "turbo run build"
 
+[tasks.demo]
+description = "Launch the current visible Reviewbench slice"
+depends = ["build"]
+interactive = true
+usage = 'arg "[project]" help="Project path; omit for the representative demo fixture"'
+run = 'bun apps/reviewbench/demo.ts "${usage_project:-}"'
+
 [tasks.typecheck]
 description = "Typecheck every workspace package"
 run = "turbo run typecheck"

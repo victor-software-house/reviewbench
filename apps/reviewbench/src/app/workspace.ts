@@ -13,8 +13,11 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
   const [activeDocumentId, setActiveDocumentId] = createSignal<string | null>(
     state.selectedDocumentId ?? info.documents[0]?.id ?? null,
   );
+  const initialDocument = info.documents.find(
+    (document) => document.id === (state.selectedDocumentId ?? info.documents[0]?.id),
+  );
   const [selectedHunkId, setSelectedHunkId] = createSignal<string | null>(
-    state.selectedHunkId ?? null,
+    state.selectedHunkId ?? initialDocument?.hunks[0]?.id ?? null,
   );
 
   const openDocument = (documentId: string) => {
@@ -47,6 +50,29 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
     }
   };
 
+  const moveDocument = (delta: number) => {
+    if (info.documents.length === 0) return;
+    const current = Math.max(
+      0,
+      info.documents.findIndex((document) => document.id === activeDocumentId()),
+    );
+    const next = (current + delta + info.documents.length) % info.documents.length;
+    const document = info.documents[next];
+    if (document) openDocument(document.id);
+  };
+
+  const moveHunk = (delta: number) => {
+    const targets = info.documents.flatMap((document) =>
+      document.hunks.map((hunk) => ({ documentId: document.id, hunkId: hunk.id })),
+    );
+    if (targets.length === 0) return;
+    const current = targets.findIndex((target) => target.hunkId === selectedHunkId());
+    const origin = current < 0 ? (delta > 0 ? -1 : 0) : current;
+    const next = (origin + delta + targets.length) % targets.length;
+    const target = targets[next];
+    if (target) navigate(target.documentId, target.hunkId);
+  };
+
   const activeDocument = createMemo<ReviewDocument | null>(() => {
     const id = activeDocumentId();
     return id ? (documents.get(id) ?? null) : null;
@@ -70,6 +96,8 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
     openDocument,
     closeDocument,
     navigate,
+    moveDocument,
+    moveHunk,
   };
 }
 

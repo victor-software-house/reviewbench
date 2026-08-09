@@ -17,5 +17,8 @@
     "@victor-software-house/reviewbench-protocol": "workspace:*",
     "@victor-software-house/reviewbench-session-daemon": "workspace:*",
     "solid-js": "1.9.12"
+  },
+  "devDependencies": {
+    "dedent": "1.7.2"
   }
 }

@@ -16,6 +16,8 @@ Read [docs/decisions.md](docs/decisions.md), [docs/architecture.md](docs/archite
 - `packages/session-*`, `review-protocol`, and `diff-engine` cannot import app or UI code.
 - Preserve the three ordered copyright lines in `LICENSE` and focused provenance in `NOTICE`.
 - Do not port broad Druk or Hunk feature sets before the decision gate in the foundation plan.
+- Keep `mise run demo` runnable at every closed feature-slice boundary. Show that visible checkpoint and collect operator feedback before opening another broad product slice.
+- Hunk's current default keybindings are canonical for equivalent Reviewbench actions. Do not bind an existing Hunk chord to a different shell action; leave unmigrated capabilities mouse-only or unbound.
 
 ## Intended layout
 
@@ -39,6 +41,7 @@ packages/test-kit/         shared fixtures
 
 ## Commands
 
+- Interactive visible checkpoint: `mise run demo` (representative fixture) or `mise run demo .` (current project)
 - Install locked tools: `mise install --locked`
 - Install dependencies: automatic before mise tasks, or `bun install --frozen-lockfile`
 - Full gate: `mise run verify`

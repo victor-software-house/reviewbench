@@ -18,6 +18,13 @@
 8. **Decision gate** — compare code size, latency, test cost, diff quality, and
    agent behavior before broad migration.
 
+## Gate result
+
+The 2026-08-09 gate selected Reviewbench as the successor. Hunk remains the temporary
+behavior oracle/fallback and Druk the shell/editor reference while explicit gaps close.
+Every later feature slice must end with a real `mise run demo` checkpoint and operator
+feedback before another broad slice starts. See [migration gate](migration-gate.md).
+
 Every phase is a closed slice with implementation, consumers, docs, tests, and
 visible verification. Temporary dual paths are removed inside the phase that
 proves their replacement.

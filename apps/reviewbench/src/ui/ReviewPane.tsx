@@ -2,18 +2,13 @@ import {
   REVIEWBENCH_DARK_THEME,
   REVIEWBENCH_LIGHT_THEME,
 } from "@victor-software-house/reviewbench-diff-engine";
-import type {
-  ReviewDocument,
-  ReviewNote,
-  ReviewWorkspaceInfo,
-} from "@victor-software-house/reviewbench-protocol";
+import type { ReviewDocument, ReviewNote } from "@victor-software-house/reviewbench-protocol";
 import { For, Show } from "solid-js";
 import type { GitHistoryEntry, SidebarView } from "../core/shell";
 import { DiffView } from "./DiffView";
 import type { ShellColors } from "./theme";
 
 interface ReviewPaneProps {
-  workspace: ReviewWorkspaceInfo;
   document: ReviewDocument | null;
   sidebarView: SidebarView;
   selectedHistory: GitHistoryEntry | null;
@@ -22,19 +17,19 @@ interface ReviewPaneProps {
   width: number;
   wrap: boolean;
   theme: "dark" | "light";
+  layout: "auto" | "split" | "stack";
+  selectedHunkId: string | null;
   colors: ShellColors;
 }
 
-/** Review surface with non-diff views around one shared diff-plan renderer path. */
+/** Review surface with one fixed file summary over the shared diff-plan renderer. */
 export function ReviewPane(props: ReviewPaneProps) {
   return (
     <box flexDirection="column" flexGrow={1} backgroundColor={props.colors.bg}>
-      <box height={2} flexDirection="column" paddingLeft={1} backgroundColor={props.colors.bg}>
-        <text fg={props.colors.text} bg={props.colors.bg} content={props.workspace.title} />
-        <text fg={props.colors.faint} bg={props.colors.bg} content={props.workspace.sourceLabel} />
-      </box>
-
       <Show when={props.sidebarView === "history" && props.selectedHistory}>
+        <box height={1} flexDirection="row" paddingLeft={1} backgroundColor={props.colors.panelAlt}>
+          <text fg={props.colors.faint} bg={props.colors.panelAlt} content="COMMIT DETAIL" />
+        </box>
         <box flexDirection="column" padding={1} backgroundColor={props.colors.bg}>
           <text
             fg={props.colors.accent}
@@ -47,12 +42,15 @@ export function ReviewPane(props: ReviewPaneProps) {
             content={`${props.selectedHistory?.author ?? ""} · ${props.selectedHistory?.relativeDate ?? ""}`}
           />
           <For each={props.selectedHistory?.refs ?? []}>
-            {(ref) => <text fg={props.colors.warning} bg={props.colors.bg} content={`● ${ref}`} />}
+            {(ref) => <text fg={props.colors.warning} bg={props.colors.bg} content={`◆ ${ref}`} />}
           </For>
         </box>
       </Show>
 
       <Show when={props.sidebarView === "notes" && props.selectedNote}>
+        <box height={1} flexDirection="row" paddingLeft={1} backgroundColor={props.colors.panelAlt}>
+          <text fg={props.colors.faint} bg={props.colors.panelAlt} content="NOTE DETAIL" />
+        </box>
         <box flexDirection="column" padding={1} backgroundColor={props.colors.bg}>
           <text
             fg={props.colors.accent}
@@ -82,36 +80,68 @@ export function ReviewPane(props: ReviewPaneProps) {
           }
         >
           {(document) => (
-            <scrollbox flexGrow={1} backgroundColor={props.colors.bg}>
-              <box flexDirection="column" paddingLeft={1} paddingRight={1}>
-                <text fg={props.colors.text} bg={props.colors.bg} content={document().path} />
+            <>
+              <box
+                height={1}
+                flexDirection="row"
+                flexShrink={0}
+                paddingLeft={1}
+                paddingRight={1}
+                backgroundColor={props.colors.panelAlt}
+              >
                 <text
-                  fg={props.colors.dim}
-                  bg={props.colors.bg}
-                  content={`+${document().additions} -${document().deletions} · ${document().hunkCount} hunks`}
+                  fg={props.colors.text}
+                  bg={props.colors.panelAlt}
+                  content={document().path}
+                  wrapMode="none"
                 />
-                <Show
-                  when={document().patch}
-                  fallback={
-                    <text
-                      fg={props.colors.faint}
-                      bg={props.colors.bg}
-                      content="Patch content was not included in this session snapshot."
-                    />
-                  }
-                >
-                  <DiffView
-                    document={document()}
-                    notes={props.notes}
-                    width={props.width}
-                    wrap={props.wrap}
-                    theme={
-                      props.theme === "dark" ? REVIEWBENCH_DARK_THEME : REVIEWBENCH_LIGHT_THEME
-                    }
-                  />
-                </Show>
+                <box flexGrow={1} backgroundColor={props.colors.panelAlt} />
+                <text
+                  fg={props.colors.added}
+                  bg={props.colors.panelAlt}
+                  content={`+${document().additions}`}
+                  flexShrink={0}
+                />
+                <text
+                  fg={props.colors.deleted}
+                  bg={props.colors.panelAlt}
+                  content={`  -${document().deletions}`}
+                  flexShrink={0}
+                />
+                <text
+                  fg={props.colors.faint}
+                  bg={props.colors.panelAlt}
+                  content={`  ${document().hunkCount} ${document().hunkCount === 1 ? "hunk" : "hunks"}`}
+                  flexShrink={0}
+                />
               </box>
-            </scrollbox>
+              <scrollbox flexGrow={1} backgroundColor={props.colors.bg}>
+                <box flexDirection="column" paddingLeft={1} paddingRight={1}>
+                  <Show
+                    when={document().patch}
+                    fallback={
+                      <text
+                        fg={props.colors.faint}
+                        bg={props.colors.bg}
+                        content="Patch content was not included in this session snapshot."
+                      />
+                    }
+                  >
+                    <DiffView
+                      document={document()}
+                      notes={props.notes}
+                      width={Math.max(1, props.width - 2)}
+                      wrap={props.wrap}
+                      layout={props.layout}
+                      selectedHunkId={props.selectedHunkId}
+                      theme={
+                        props.theme === "dark" ? REVIEWBENCH_DARK_THEME : REVIEWBENCH_LIGHT_THEME
+                      }
+                    />
+                  </Show>
+                </box>
+              </scrollbox>
+            </>
           )}
         </Show>
       </Show>

@@ -30,6 +30,7 @@ export interface DiffTheme {
   foreground: string;
   muted: string;
   hunkBackground: string;
+  selectedHunkBackground: string;
   additionBackground: string;
   additionEmphasis: string;
   additionSign: string;
@@ -159,12 +160,13 @@ export const REVIEWBENCH_DARK_THEME: DiffTheme = {
   foreground: "#e6edf3",
   muted: "#8b949e",
   hunkBackground: "#161b22",
-  additionBackground: "#12261a",
-  additionEmphasis: "#264f35",
-  additionSign: "#3fb950",
-  deletionBackground: "#2d1719",
-  deletionEmphasis: "#5c262a",
-  deletionSign: "#f85149",
+  selectedHunkBackground: "#1a2635",
+  additionBackground: "#101a14",
+  additionEmphasis: "#1f3d2a",
+  additionSign: "#56d364",
+  deletionBackground: "#1d1416",
+  deletionEmphasis: "#4a2226",
+  deletionSign: "#ff7b72",
   contextBackground: "#0d1117",
   noteBackground: "#1c2633",
   noteForeground: "#c9d1d9",
@@ -184,11 +186,12 @@ export const REVIEWBENCH_LIGHT_THEME: DiffTheme = {
   foreground: "#1f2328",
   muted: "#656d76",
   hunkBackground: "#f6f8fa",
-  additionBackground: "#dafbe1",
-  additionEmphasis: "#aceebb",
+  selectedHunkBackground: "#ddf4ff",
+  additionBackground: "#edf8f0",
+  additionEmphasis: "#c8efd2",
   additionSign: "#1a7f37",
-  deletionBackground: "#ffebe9",
-  deletionEmphasis: "#ffcecb",
+  deletionBackground: "#fff1f0",
+  deletionEmphasis: "#ffd7d5",
   deletionSign: "#cf222e",
   contextBackground: "#ffffff",
   noteBackground: "#ddf4ff",
@@ -247,11 +250,11 @@ export function measureWrappedSpans(spans: readonly DiffSpan[], width: number, w
   return Math.max(1, Math.ceil(contentWidth / cellWidth));
 }
 
-/** Format Pierre's parsed hunk without inventing missing count fields. */
+/** Format Pierre's parsed hunk without duplicating context already carried by hunkSpecs. */
 export function formatHunkHeader(hunk: Hunk) {
-  const specs =
-    hunk.hunkSpecs?.trimEnd() ??
-    `@@ -${hunk.deletionStart},${hunk.deletionCount} +${hunk.additionStart},${hunk.additionCount} @@`;
+  const parsed = hunk.hunkSpecs?.trimEnd();
+  if (parsed) return parsed;
+  const specs = `@@ -${hunk.deletionStart},${hunk.deletionCount} +${hunk.additionStart},${hunk.additionCount} @@`;
   return hunk.hunkContext ? `${specs} ${hunk.hunkContext}` : specs;
 }
 

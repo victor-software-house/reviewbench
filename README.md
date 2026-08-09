@@ -11,20 +11,36 @@ It is a new public project combining three deliberately separate strengths:
 
 ## Status
 
-**Architecture spike.** The first gate is intentionally narrow:
+**Runnable architecture slice.** The foundation gate is complete: one Bun daemon-backed
+Solid/OpenTUI host is controllable through the existing Hunk CLI compatibility surface,
+and its sole diff path renders framework-neutral Pierre/Shiki plans with word emphasis,
+exact syntax scopes, split/stack geometry, wrapping, folds, themes, and line-anchored notes.
 
-1. keep Hunk's Bun-only daemon and existing agent CLI semantics;
-2. register and control one live Solid/OpenTUI Reviewbench process;
-3. render one Hunk-quality diff without embedding React;
-4. compare code size, latency, test cost, and behavior before broad migration.
+The measured gate selected Reviewbench as the successor. Hunk remains the temporary
+behavior oracle and fallback while Reviewbench closes explicit parity gaps in visible,
+runnable slices; Druk remains the shell/editor reference rather than another runtime.
 
 Reviewbench has no Node runtime or Node transport path. Bun is the application,
 tooling, test, and packaging runtime.
 
 The current shell opens one project, keeps review workspaces above document tabs,
 and exposes Files, Git comparison, History, and Notes surfaces with process-global
-theme, sidebar, and wrapping settings. Its patch body is deliberately plain until
-the framework-neutral Hunk-quality diff plan lands.
+theme, sidebar, and wrapping settings.
+
+## See the current slice
+
+```sh
+mise run demo       # representative changed repository
+mise run demo .     # your current project
+```
+
+The command builds first and opens the real compiled TUI. Resize wide for split view.
+Reviewbench keeps Hunk's bindings for equivalent actions: `q` quits, `s` toggles the
+sidebar, `t` switches theme, `w` toggles wrapping, `0`/`1`/`2` select
+auto/split/stack, `,`/`.` move between files, and `[`/`]` move between hunks.
+Sidebar surfaces remain clickable until their matching Hunk command model exists; they
+do not steal unrelated keys. Each future closed feature slice must keep this demo
+runnable before the next slice begins.
 
 ## Develop
 
@@ -32,7 +48,7 @@ the framework-neutral Hunk-quality diff plan lands.
 direnv allow
 mise install --locked
 mise run verify
-bun run apps/reviewbench/src/index.tsx .
+mise run demo .
 ```
 
 The repository is a Bun workspace orchestrated by Turborepo and mise. Package

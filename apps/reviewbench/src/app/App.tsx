@@ -1,9 +1,10 @@
+import { TextAttributes } from "@opentui/core";
 import { useKeyboard, useRenderer } from "@opentui/solid";
 import type {
   ReviewWorkspaceInfo,
   ReviewWorkspaceState,
 } from "@victor-software-house/reviewbench-protocol";
-import { createEffect, createMemo, onMount, Show } from "solid-js";
+import { createEffect, createMemo, For, onMount, Show } from "solid-js";
 import { ReviewPane } from "../ui/ReviewPane";
 import { Sidebar } from "../ui/Sidebar";
 import { Tabs } from "../ui/Tabs";
@@ -24,6 +25,25 @@ export interface AppProps {
   onSnapshot?: ((state: ReviewWorkspaceState) => void) | undefined;
 }
 
+function sourceBadge(source: ReviewWorkspaceInfo["source"]) {
+  switch (source.kind) {
+    case "working-tree":
+      return source.staged ? "STAGED" : "WORKING TREE";
+    case "commit":
+      return "COMMIT";
+    case "stash":
+      return "STASH";
+    case "file-pair":
+      return "FILE PAIR";
+    case "patch":
+      return "PATCH";
+    case "external-diff":
+      return "EXTERNAL DIFF";
+  }
+  source satisfies never;
+  throw new Error("Unsupported review source.");
+}
+
 /**
  * Druk-derived composition root: controllers are created once in dependency order,
  * while presentational UI receives only reactive values and callbacks.
@@ -37,12 +57,30 @@ export function App(props: AppProps) {
   const review = createReview(props.state);
   const host = createReviewbenchHost({ workspace, review });
   const colors = createMemo(() => colorsFor(settings.settings.theme));
-  const reviewWidth = createMemo(() =>
-    Math.max(
-      40,
-      renderer.width - (settings.settings.sidebarVisible ? settings.settings.sidebarWidth : 0),
-    ),
+  const additions = createMemo(() =>
+    props.workspace.documents.reduce((total, document) => total + document.additions, 0),
   );
+  const deletions = createMemo(() =>
+    props.workspace.documents.reduce((total, document) => total + document.deletions, 0),
+  );
+  const sidebarWidth = createMemo(() =>
+    Math.min(settings.settings.sidebarWidth, Math.max(18, Math.floor(renderer.width * 0.24))),
+  );
+  const reviewWidth = createMemo(() =>
+    Math.max(40, renderer.width - (settings.settings.sidebarVisible ? sidebarWidth() : 0)),
+  );
+  const footerHints = createMemo(() => {
+    const hints = [
+      { key: "[ / ]", label: "hunks" },
+      { key: ", / .", label: "files" },
+    ];
+    if (renderer.width >= 78) hints.push({ key: "s", label: "sidebar" });
+    if (renderer.width >= 104) hints.push({ key: "0 / 1 / 2", label: "layout" });
+    if (renderer.width >= 126) hints.push({ key: "t", label: "theme" });
+    if (renderer.width >= 140) hints.push({ key: "w", label: "wrap" });
+    hints.push({ key: "q", label: "quit" });
+    return hints;
+  });
 
   onMount(() => props.onHostReady?.(host));
   createEffect(() => {
@@ -51,14 +89,53 @@ export function App(props: AppProps) {
   });
 
   useKeyboard((key) => {
-    if (key.name === "escape" || (key.ctrl && key.name === "c")) renderer.destroy();
-    if (key.name === "1") sidebar.selectView("files");
-    if (key.name === "2") sidebar.selectView("git");
-    if (key.name === "3") sidebar.selectView("history");
-    if (key.name === "4") sidebar.selectView("notes");
-    if (key.name === "b") settings.toggleSidebar();
-    if (key.name === "t") settings.toggleTheme();
-    if (key.name === "w") settings.toggleWrap();
+    if (key.ctrl && key.name === "c") {
+      key.preventDefault();
+      key.stopPropagation();
+      renderer.destroy();
+      return;
+    }
+
+    const chord = key.sequence || key.name;
+    switch (chord) {
+      case "q":
+        renderer.destroy();
+        break;
+      case "s":
+        settings.toggleSidebar();
+        break;
+      case "t":
+        settings.toggleTheme();
+        break;
+      case "w":
+        settings.toggleWrap();
+        break;
+      case "0":
+        settings.selectLayout("auto");
+        break;
+      case "1":
+        settings.selectLayout("split");
+        break;
+      case "2":
+        settings.selectLayout("stack");
+        break;
+      case ",":
+        workspace.moveDocument(-1);
+        break;
+      case ".":
+        workspace.moveDocument(1);
+        break;
+      case "[":
+        workspace.moveHunk(-1);
+        break;
+      case "]":
+        workspace.moveHunk(1);
+        break;
+      default:
+        return;
+    }
+    key.preventDefault();
+    key.stopPropagation();
   });
 
   return (
@@ -67,16 +144,54 @@ export function App(props: AppProps) {
         height={1}
         flexDirection="row"
         flexShrink={0}
-        paddingLeft={1}
+        alignItems="center"
         backgroundColor={colors().bar}
       >
-        <text fg={colors().accent} bg={colors().bar} content="Reviewbench" flexShrink={0} />
+        <text
+          fg={colors().accent}
+          bg={colors().bar}
+          content=" Reviewbench"
+          flexShrink={0}
+          attributes={TextAttributes.BOLD}
+        />
+        <text fg={colors().faint} bg={colors().bar} content="  /  " flexShrink={0} />
+        <text
+          fg={colors().text}
+          bg={colors().bar}
+          content={props.workspace.name}
+          wrapMode="none"
+          flexShrink={1}
+          attributes={TextAttributes.BOLD}
+        />
+        <box flexGrow={1} backgroundColor={colors().bar} />
+        <text
+          fg={colors().text}
+          bg={colors().accentMuted}
+          content={` ${sourceBadge(props.workspace.source)} `}
+          wrapMode="none"
+          flexShrink={0}
+          attributes={TextAttributes.BOLD}
+        />
         <text
           fg={colors().dim}
           bg={colors().bar}
-          content={`  ${props.workspace.name}  ·  ${props.workspace.cwd}`}
+          content={` ${props.workspace.documents.length} files  `}
           wrapMode="none"
-          flexShrink={1}
+          flexShrink={0}
+        />
+        <text
+          fg={colors().added}
+          bg={colors().bar}
+          content={`+${additions()}`}
+          wrapMode="none"
+          flexShrink={0}
+        />
+        <text
+          fg={colors().deleted}
+          bg={colors().bar}
+          content={` -${deletions()} `}
+          wrapMode="none"
+          flexShrink={0}
         />
       </box>
       <Tabs
@@ -89,7 +204,7 @@ export function App(props: AppProps) {
       <box flexDirection="row" flexGrow={1} backgroundColor={colors().bg}>
         <Show when={settings.settings.sidebarVisible}>
           <Sidebar
-            width={settings.settings.sidebarWidth}
+            width={sidebarWidth()}
             view={sidebar.view()}
             colors={colors()}
             documents={workspace.documents}
@@ -107,7 +222,6 @@ export function App(props: AppProps) {
           />
         </Show>
         <ReviewPane
-          workspace={props.workspace}
           document={workspace.activeDocument()}
           sidebarView={sidebar.view()}
           selectedHistory={history.selected()}
@@ -116,22 +230,27 @@ export function App(props: AppProps) {
           width={reviewWidth()}
           wrap={settings.settings.wrap}
           theme={settings.settings.theme}
+          layout={settings.settings.layout}
+          selectedHunkId={workspace.selectedHunkId()}
           colors={colors()}
         />
       </box>
       <box height={1} flexDirection="row" flexShrink={0} backgroundColor={colors().bar}>
+        <For each={footerHints()}>
+          {(hint) => (
+            <box flexDirection="row" flexShrink={0} paddingLeft={1} backgroundColor={colors().bar}>
+              <text fg={colors().accent} bg={colors().bar} content={`${hint.key} `} />
+              <text fg={colors().faint} bg={colors().bar} content={hint.label} />
+            </box>
+          )}
+        </For>
+        <box flexGrow={1} backgroundColor={colors().bar} />
         <text
           fg={colors().dim}
           bg={colors().bar}
-          content=" 1 Files  2 Git  3 History  4 Notes  b Sidebar  t Theme  w Wrap  Esc Quit"
-          wrapMode="none"
-        />
-        <box flexGrow={1} backgroundColor={colors().bar} />
-        <text
-          fg={colors().faint}
-          bg={colors().bar}
           content={` ${props.workspace.documents.length} files · ${review.notes().length} notes `}
           wrapMode="none"
+          flexShrink={0}
         />
       </box>
     </box>

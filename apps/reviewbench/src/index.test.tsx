@@ -9,6 +9,19 @@ import type {
 } from "@victor-software-house/reviewbench-protocol";
 import { App } from "./app/App";
 import { loadProjectShell } from "./app/project";
+import { createWorkspace } from "./app/workspace";
+import { colorsFor } from "./ui/theme";
+
+function capturedColorToHex(color: { buffer?: ArrayLike<number> } | undefined) {
+  const buffer = color?.buffer;
+  if (!buffer || buffer[0] == null || buffer[1] == null || buffer[2] == null) return null;
+  const byteScale = [buffer[0], buffer[1], buffer[2]].some((value) => value > 1);
+  const component = (value: number) =>
+    Math.max(0, Math.min(255, Math.round(byteScale ? value : value * 255)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${component(buffer[0])}${component(buffer[1])}${component(buffer[2])}`;
+}
 
 const workspace: ReviewWorkspaceInfo = {
   id: "workspace-1",
@@ -125,17 +138,62 @@ describe("Reviewbench project shell loader", () => {
 });
 
 describe("Reviewbench Solid shell", () => {
-  test("renders project chrome, distinct document tabs, and the selected patch", async () => {
+  test("traverses exact hunk identities in document order", () => {
+    const secondHunk = { id: "document:a:hunk:1:20:20", index: 1, header: "@@ -20 +20 @@" };
+    const bHunk = { id: "document:b:hunk:0:1:1", index: 0, header: "@@ -1 +1 @@" };
+    const [firstDocument, secondDocument] = workspace.documents;
+    if (!firstDocument || !secondDocument) throw new Error("Expected two fixture documents.");
+    const controller = createWorkspace(
+      {
+        ...workspace,
+        documents: [
+          { ...firstDocument, hunks: [...firstDocument.hunks, secondHunk] },
+          { ...secondDocument, hunks: [bHunk] },
+        ],
+      },
+      { id: state.id, showAgentNotes: state.showAgentNotes, notes: state.notes },
+    );
+
+    expect(controller.selectedHunkId()).toBe("document:a:hunk:0:1:1");
+    controller.moveHunk(1);
+    expect(controller.selectedHunkId()).toBe(secondHunk.id);
+    controller.moveHunk(1);
+    expect(controller.selectedHunkId()).toBe(bHunk.id);
+    expect(controller.activeDocumentId()).toBe("document:b");
+    controller.moveHunk(-1);
+    expect(controller.selectedHunkId()).toBe(secondHunk.id);
+  });
+
+  test("renders a compact review hierarchy instead of scaffold chrome", async () => {
     const harness = await renderShell();
     try {
       const frame = harness.captureCharFrame();
-      expect(frame).toContain("Reviewbench");
-      expect(frame).toContain("reviewbench  ·  /repo");
-      expect(frame).toContain("src/a.ts");
+      expect(frame).toContain("Reviewbench  /  reviewbench");
+      expect(frame).toContain("WORKING TREE");
+      expect(frame).toContain("CHANGES  2 files");
+      expect(frame).toContain("M  src/a.ts");
+      expect(frame).toContain("+2 -1");
       expect(frame).toContain("src/b.ts");
-      expect(frame).toContain("main...feature");
       expect(frame).toContain("const next = 2");
       expect(frame).toContain("Check the boundary");
+      expect(frame).toContain("▎ @@");
+      expect(frame).toContain("[ / ] hunks");
+      expect(frame).toContain(", / . files");
+      expect(frame).toContain("s sidebar");
+      expect(frame).toContain("q quit");
+      expect(frame).not.toContain("reviewbench  ·  /repo");
+
+      const selectedLine = harness.captureSpans().lines.find((line) =>
+        line.spans
+          .map((span) => span.text)
+          .join("")
+          .includes("M  src/a.ts"),
+      );
+      expect(
+        selectedLine?.spans.some(
+          (span) => capturedColorToHex(span.bg)?.toLowerCase() === colorsFor("dark").selected,
+        ),
+      ).toBe(true);
     } finally {
       harness.renderer.destroy();
     }
@@ -144,14 +202,14 @@ describe("Reviewbench Solid shell", () => {
   test("switches global sidebar surfaces without changing document tabs", async () => {
     const harness = await renderShell();
     try {
-      await harness.mockInput.typeText("3");
+      await harness.mockMouse.click(13, 2);
       await harness.flush();
       const history = harness.captureCharFrame();
       expect(history).toContain("COMMITS");
       expect(history).toContain("Define review protocol");
       expect(history).toContain("src/a.ts");
 
-      await harness.mockInput.typeText("4");
+      await harness.mockMouse.click(20, 2);
       await harness.flush();
       const notes = harness.captureCharFrame();
       expect(notes).toContain("REVIEW NOTES");
@@ -162,14 +220,42 @@ describe("Reviewbench Solid shell", () => {
     }
   });
 
+  test("uses Hunk bindings for files, layout, sidebar, theme, and wrapping", async () => {
+    const harness = await renderShell();
+    try {
+      await harness.mockInput.typeText(".");
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("A  src/b.ts");
+
+      await harness.mockInput.typeText(",1");
+      await harness.flush();
+      const split = harness.captureCharFrame();
+      expect(split).toContain("M  src/a.ts");
+      expect(split).toContain("│");
+
+      await harness.mockInput.typeText("s");
+      await harness.flush();
+      expect(harness.captureCharFrame()).not.toContain("CHANGES");
+
+      await harness.mockInput.typeText("stw");
+      await harness.flush();
+      expect(harness.captureCharFrame()).toContain("CHANGES");
+    } finally {
+      harness.renderer.destroy();
+    }
+  });
+
   test("shares theme and sidebar settings across every surface", async () => {
     const harness = await renderShell();
     try {
-      await harness.mockInput.typeText("b");
+      await harness.mockInput.typeText("s");
       await harness.flush();
-      expect(harness.captureCharFrame()).not.toContain("DOCUMENTS");
+      expect(harness.captureCharFrame()).not.toContain("CHANGES");
 
-      await harness.mockInput.typeText("b3t");
+      await harness.mockInput.typeText("s");
+      await harness.flush();
+      await harness.mockMouse.click(13, 2);
+      await harness.mockInput.typeText("t");
       await harness.flush();
       const frame = harness.captureCharFrame();
       expect(frame).toContain("COMMITS");

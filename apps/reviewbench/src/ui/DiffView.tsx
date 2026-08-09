@@ -16,6 +16,8 @@ interface DiffViewProps {
   width: number;
   wrap: boolean;
   theme: DiffTheme;
+  layout: "auto" | "split" | "stack";
+  selectedHunkId: string | null;
 }
 
 function annotationsFor(documentId: string, notes: readonly ReviewNote[]): DiffAnnotation[] {
@@ -72,12 +74,32 @@ function StackCell(props: { cell: DiffCellPlan; digits: number; wrap: boolean; t
   return (
     <box height={props.cell.height} flexDirection="row" backgroundColor={background()}>
       <text
+        width={props.digits + 1}
+        flexShrink={0}
+        fg={props.theme.muted}
+        bg={background()}
+        content={`${oldLine()} `}
+      />
+      <text
+        width={props.digits + 1}
+        flexShrink={0}
+        fg={props.theme.muted}
+        bg={background()}
+        content={`${newLine()} `}
+      />
+      <text
+        width={2}
+        flexShrink={0}
         fg={foreground()}
+        bg={background()}
+        content={`${props.cell.sign} `}
+      />
+      <text
+        fg={props.theme.foreground}
         bg={background()}
         wrapMode={props.wrap ? "char" : "none"}
         flexGrow={1}
       >
-        {`${oldLine()} ${newLine()} ${props.cell.sign} `}
         <StyledSpans
           spans={props.cell.spans}
           foreground={props.theme.foreground}
@@ -99,14 +121,33 @@ function SplitCell(props: {
   const foreground = () => lineForeground(props.cell, props.theme);
   const line = () => props.cell.oldLine ?? props.cell.newLine;
   return (
-    <box height={props.height} flexGrow={1} flexBasis={0} backgroundColor={background()}>
+    <box
+      height={props.height}
+      flexGrow={1}
+      flexBasis={0}
+      flexDirection="row"
+      backgroundColor={background()}
+    >
       <text
+        width={props.digits + 1}
+        flexShrink={0}
+        fg={props.theme.muted}
+        bg={background()}
+        content={`${String(line() ?? "").padStart(props.digits)} `}
+      />
+      <text
+        width={2}
+        flexShrink={0}
         fg={foreground()}
+        bg={background()}
+        content={`${props.cell.sign} `}
+      />
+      <text
+        fg={props.theme.foreground}
         bg={background()}
         wrapMode={props.wrap ? "char" : "none"}
         flexGrow={1}
       >
-        {`${String(line() ?? "").padStart(props.digits)} ${props.cell.sign} `}
         <StyledSpans
           spans={props.cell.spans}
           foreground={props.theme.foreground}
@@ -122,21 +163,25 @@ function PlannedRow(props: {
   plan: DiffRenderPlan;
   wrap: boolean;
   theme: DiffTheme;
+  selectedHunkId: string | null;
 }) {
+  const selected = () => "hunkId" in props.row && props.row.hunkId === props.selectedHunkId;
+  const metadataBackground = () =>
+    selected() ? props.theme.selectedHunkBackground : props.theme.hunkBackground;
   return (
     <Switch>
       <Match when={props.row.type === "fold"}>
         <text
           fg={props.theme.muted}
-          bg={props.theme.hunkBackground}
-          content={`  ··· ${props.row.type === "fold" ? props.row.text : ""} ···`}
+          bg={metadataBackground()}
+          content={`  ⋯ ${props.row.type === "fold" ? props.row.text : ""}`}
         />
       </Match>
       <Match when={props.row.type === "hunk"}>
         <text
-          fg={props.theme.muted}
-          bg={props.theme.hunkBackground}
-          content={props.row.type === "hunk" ? props.row.text : ""}
+          fg={selected() ? props.theme.foreground : props.theme.muted}
+          bg={metadataBackground()}
+          content={`${selected() ? "▎" : " "} ${props.row.type === "hunk" ? props.row.text : ""}`}
         />
       </Match>
       <Match when={props.row.type === "split"}>
@@ -186,7 +231,7 @@ function PlannedRow(props: {
         <text
           fg={props.theme.muted}
           bg={props.theme.hunkBackground}
-          content={`  ··· ${props.row.type === "truncated" ? props.row.text : ""}`}
+          content={`  ⋯ ${props.row.type === "truncated" ? props.row.text : ""}`}
         />
       </Match>
     </Switch>
@@ -202,7 +247,7 @@ export function DiffView(props: DiffViewProps) {
         documentId: props.document.id,
         path: props.document.path,
         patch: props.document.patch,
-        layout: props.width >= 100 ? ("split" as const) : ("stack" as const),
+        layout: props.layout === "auto" ? (props.width >= 100 ? "split" : "stack") : props.layout,
         width: props.width,
         wrap: props.wrap,
         theme: props.theme,
@@ -226,7 +271,13 @@ export function DiffView(props: DiffViewProps) {
       {(resolved) => (
         <For each={resolved().rows}>
           {(row) => (
-            <PlannedRow row={row} plan={resolved()} wrap={props.wrap} theme={props.theme} />
+            <PlannedRow
+              row={row}
+              plan={resolved()}
+              wrap={props.wrap}
+              theme={props.theme}
+              selectedHunkId={props.selectedHunkId}
+            />
           )}
         </For>
       )}
