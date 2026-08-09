@@ -1,0 +1,13 @@
+Reviewbench combines and adapts ideas and source code from:
+
+- Hunk — Copyright Ben Vinegar — MIT License
+  https://github.com/modem-dev/hunk
+- Druk — Copyright 2026 Valerii Strilets — MIT License
+  https://github.com/letstri/druk
+- Reviewbench original work — Copyright 2026 Victor Software House — MIT License
+  https://github.com/victor-software-house/reviewbench
+
+Source-derived files must retain focused provenance comments or accompanying
+third-party notices when their origin is not otherwise clear from repository
+history. Additional dependency notices will be materialized before binary
+publication.
