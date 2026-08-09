@@ -14,3 +14,4 @@
 - 2026-08-09 — Keep Hunk compatibility as a validated projection from current `hunk session` requests into product-neutral review, workspace, and note actions. Hunk view options do not become review-source identity.
 - 2026-08-09 — Seed the shell on OpenTUI 0.5.1 with its exact Solid 1.9.12 peer. The app package alone skips dependency declaration checking because OpenTUI 0.5.1's declarations conflict with TypeScript 7; Reviewbench source remains fully strict.
 - 2026-08-09 — Keep the shell's temporary patch display plain and singular. Do not add OpenTUI's built-in diff widget before the framework-neutral Pierre/Shiki plan replaces it.
+- 2026-08-09 — Reuse Hunk's loopback port and current `hunk session` HTTP shape for the spike, but advertise only actions Reviewbench implements. Product commands remain `review.*`/`note.*` internally; the Hunk shape is an ingress/egress adapter, not the new domain contract.

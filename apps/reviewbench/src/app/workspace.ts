@@ -13,11 +13,28 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
   const [activeDocumentId, setActiveDocumentId] = createSignal<string | null>(
     state.selectedDocumentId ?? info.documents[0]?.id ?? null,
   );
+  const [selectedHunkId, setSelectedHunkId] = createSignal<string | null>(
+    state.selectedHunkId ?? null,
+  );
 
   const openDocument = (documentId: string) => {
     if (!documents.has(documentId)) return;
     setTabIds((ids) => (ids.includes(documentId) ? ids : [...ids, documentId]));
     setActiveDocumentId(documentId);
+    const document = documents.get(documentId);
+    if (!document?.hunks.some((hunk) => hunk.id === selectedHunkId())) {
+      setSelectedHunkId(document?.hunks[0]?.id ?? null);
+    }
+  };
+
+  const navigate = (documentId: string, hunkId?: string) => {
+    const document = documents.get(documentId);
+    if (!document) throw new Error(`Unknown review document ${documentId}.`);
+    if (hunkId && !document.hunks.some((hunk) => hunk.id === hunkId)) {
+      throw new Error(`Unknown review hunk ${hunkId} in ${document.path}.`);
+    }
+    openDocument(documentId);
+    setSelectedHunkId(hunkId ?? document.hunks[0]?.id ?? null);
   };
 
   const closeDocument = (documentId: string) => {
@@ -49,8 +66,10 @@ export function createWorkspace(info: ReviewWorkspaceInfo, state: ReviewWorkspac
     tabs,
     activeDocumentId,
     activeDocument,
+    selectedHunkId,
     openDocument,
     closeDocument,
+    navigate,
   };
 }
 

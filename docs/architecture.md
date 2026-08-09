@@ -67,6 +67,13 @@ wire/body limits, schema validation, selector behavior, stale-session expiry,
 loopback/DNS-rebinding defenses, idle shutdown, and CLI-visible capabilities.
 
 The existing Hunk host remains compatible while Reviewbench is a second host.
+Reviewbench now starts the extracted Bun daemon on Hunk's loopback port (or
+`HUNK_MCP_PORT`), registers its live protocol snapshot over WebSocket, and exposes
+the bounded existing-compatible HTTP actions proven in the spike: list, get,
+context, review, navigate, comment add/list/remove. Unsupported capabilities are
+not advertised. Host/Origin validation, JSON/body limits, stale-session behavior,
+and exact target resolution remain enforced.
+
 Host capabilities make partial migration explicit rather than silently accepting
 commands a host cannot perform.
 

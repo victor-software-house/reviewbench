@@ -3,12 +3,13 @@ import type {
   ReviewWorkspaceInfo,
   ReviewWorkspaceState,
 } from "@victor-software-house/reviewbench-protocol";
-import { createMemo, Show } from "solid-js";
+import { createEffect, createMemo, onMount, Show } from "solid-js";
 import { ReviewPane } from "../ui/ReviewPane";
 import { Sidebar } from "../ui/Sidebar";
 import { Tabs } from "../ui/Tabs";
 import { colorsFor } from "../ui/theme";
 import { createHistory, type GitHistoryEntry } from "./history";
+import { createReviewbenchHost, type ReviewbenchHost } from "./host";
 import { createReview } from "./review";
 import { createSettings, type ShellSettings } from "./settings";
 import { createSidebar } from "./sidebar";
@@ -19,6 +20,8 @@ export interface AppProps {
   state: ReviewWorkspaceState;
   history?: GitHistoryEntry[] | undefined;
   settings?: Partial<ShellSettings> | undefined;
+  onHostReady?: ((host: ReviewbenchHost) => void) | undefined;
+  onSnapshot?: ((state: ReviewWorkspaceState) => void) | undefined;
 }
 
 /**
@@ -32,7 +35,14 @@ export function App(props: AppProps) {
   const sidebar = createSidebar();
   const history = createHistory(props.history ?? []);
   const review = createReview(props.state);
+  const host = createReviewbenchHost({ workspace, review });
   const colors = createMemo(() => colorsFor(settings.settings.theme));
+
+  onMount(() => props.onHostReady?.(host));
+  createEffect(() => {
+    const state = host.snapshot().workspaces[0];
+    if (state) props.onSnapshot?.(state);
+  });
 
   useKeyboard((key) => {
     if (key.name === "escape" || (key.ctrl && key.name === "c")) renderer.destroy();
@@ -54,12 +64,13 @@ export function App(props: AppProps) {
         paddingLeft={1}
         backgroundColor={colors().bar}
       >
-        <text fg={colors().accent} bg={colors().bar} content="Reviewbench" />
+        <text fg={colors().accent} bg={colors().bar} content="Reviewbench" flexShrink={0} />
         <text
           fg={colors().dim}
           bg={colors().bar}
           content={`  ${props.workspace.name}  ·  ${props.workspace.cwd}`}
           wrapMode="none"
+          flexShrink={1}
         />
       </box>
       <Tabs
